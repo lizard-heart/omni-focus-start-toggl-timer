@@ -4,23 +4,25 @@
   "author": "Henry Gustafson",
   "identifier": "com.github.lizard-heart.of-start-toggl-timer",
   "version": "1.0",
-  "description": "This action will start a timer on the highlighted task using toggl.",
-  "label": "Start Timer",
-  "shortLabel": "Start Toggle Timer"
+  "description": "Run this automation when highlighting a task to start a timer in toggl with the task name as the description, project name as project, and any tags attached to the OmniFocus task.",
+  "label": "Start Toggl Timer",
+  "shortLabel": "Start Timer"
 }*/
 
 (() => {
-  // Replace the string below with your API Token found here: https://track.toggl.com/profile
-  const TOGGL_AUTH_TOKEN = "api key";
+  // add your toggl api token here
+  const api_key = "api key";
 
-  const AuthHeader = `Basic ${btoa(`${TOGGL_AUTH_TOKEN}:api_token`)}`;
+  const AuthHeader = `Basic ${btoa(`${api_key}:api_token`)}`;
 
   const buildErrorObject = (r) => ({
     statusCode: r.statusCode,
     data: r.bodyString,
   });
 
-  async function startTogglTimer(timeEntry) {
+
+  // this function makes a fetch request to the toggl api
+  async function startTimer(timeEntry) {
     const fetchRequest = new URL.FetchRequest();
     fetchRequest.bodyData = Data.fromString(
       JSON.stringify({
@@ -37,10 +39,10 @@
     );
     const r = await fetchRequest.fetch();
 
-    if (r.statusCode !== 200) {
-      console.log('here');
-      throw buildErrorObject(r);
-    }
+    // if (r.statusCode !== 200) {
+    //   console.log('here');
+    //   throw buildErrorObject(r);
+    // }
 
     return JSON.parse(r.bodyString).data;
   }
@@ -90,21 +92,8 @@
     await a.show();
   }
 
-  // Main action
   var action = new PlugIn.Action(async function (selection) {
     try {
-      // let trackingTag = flattenedTags.find((t) => t.name === TRACKING_TAG_NAME);
-
-      // if (!trackingTag) {
-      //   trackingTag = new Tag(TRACKING_TAG_NAME);
-      // }
-
-      // trackingTag.tasks.forEach((task) => {
-      //   if (task.name.startsWith(TRACKING_NAME_PREFIX)) {
-      //     task.name = task.name.replace(TRACKING_NAME_PREFIX, '');
-      //   }
-      //   task.removeTag(trackingTag);
-      // });
 
       let projects = [];
 
@@ -168,7 +157,7 @@
 
 
       try {
-        const r = await startTogglTimer({
+        const r = await startTimer({
           description: taskName,
           created_with: 'omnifocus',
           tags: TogglTags,
@@ -188,11 +177,10 @@
   });
 
   action.validate = function (selection, sender) {
-    // selection options: tasks, projects, folders, tags
     return selection.tasks.length === 1;
   };
 
-  // the following is a pollyfill for base64 taken from https://github.com/MaxArt2501/base64-js/blob/master/base64.js
+  // Here I'm using https://github.com/MaxArt2501/base64-js/blob/master/base64.js
   function btoa(stringParam) {
     const b64 =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
@@ -203,7 +191,7 @@
       c,
       result = '',
       i = 0,
-      rest = string.length % 3; // To determine the final padding
+      rest = string.length % 3;
 
     for (; i < string.length; ) {
       if (
@@ -211,7 +199,7 @@
         (b = string.charCodeAt(i++)) > 255 ||
         (c = string.charCodeAt(i++)) > 255
       ) {
-        throw "Failed to execute 'btoa' on 'Window': The string to be encoded contains characters outside of the Latin1 range.";
+        throw "Error";
       }
 
       bitmap = (a << 16) | (b << 8) | c;
@@ -221,7 +209,6 @@
         b64.charAt((bitmap >> 6) & 63) +
         b64.charAt(bitmap & 63);
     }
-    // If there's need of padding, replace the last 'A's with equal signs
     return rest ? result.slice(0, rest - 3) + '==='.substring(rest) : result;
   }
 
