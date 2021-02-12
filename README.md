@@ -7,4 +7,4 @@ To add this automation to OmniFocus download this repository as a zip file or cl
 First, you will need to add your toggl api key at the beginning of the file. To open the file, go to the Automation menu in OmniFocus, click Configure, select this automation, click Reveal in Finder, and open the file in any text editor. You should be able to find your api key at [[https://track.toggl.com/profile]]. Paste in into the api_key variable to allow the automation to start timers in your Toggl workspace.
 
 ## features/how to use
-To run the automation, select a task then go to the Automation menu and press Start Toggl Timer.
+To run the automation, select a task then go to the Automation menu and press Start Toggl Timer. The 
