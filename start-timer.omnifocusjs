@@ -2,7 +2,7 @@
   "type": "action",
   "targets": ["omnifocus"],
   "author": "Henry Gustafson",
-  "identifier": "com.github.lizard-heart.of-start-toggl-timer",
+  "identifier": "com.github.lizard-heart.omni-focus-start-toggl-timer",
   "version": "1.0",
   "description": "Run this automation when highlighting a task to start a timer in toggl with the task name as the description, project name as project, and any tags attached to the OmniFocus task.",
   "label": "Start Toggl Timer",
