@@ -8,6 +8,10 @@ First, you will need to add your Toggl API key at the beginning of the file. To 
 
 ## features/how to use
 To run the automation, select a task then go to the Automation menu and press Start Toggl Timer. (Or you can set a keyboard shortcut for it) If the project exists already in your Toggl workspace, then that will be the project used for your timer. The title of the OmniFocus task will be used the Toggl timer's description. Finally, any tags on the task that start with the text "Toggl" will be added to the Toggl timer without the "Toggl" text. Like the project, if any of those tags do not exist in your Toggl workspace, they will be automatically created. 
+https://user-images.githubusercontent.com/62226606/117526904-ee139b80-af7c-11eb-9794-1ef7a539407a.mov
 
 ### colon in project name
 If it doesn't already exist, it will be automatically created. If you have a project in OmniFocus that is part of a larger project and if you want your Toggl timer to use that, you can put the name of your Toggl project before the OmniFocus project name with a ":". For example, running the Start Toggl Timer automation on a task within an OmniFocus project called "Coding: OmniFocus Toggl Automation" will start a Toggl timer with the project "Coding." Then, any text after the ":" (in this case "OmniFocus Toggl Automation") will be put at the start of the Toggl timer's description, again followed by a colon.
+
+https://user-images.githubusercontent.com/62226606/117527010-8873df00-af7d-11eb-8939-fa20396968f7.mov
+
