@@ -12,7 +12,6 @@
 (() => {
   // add your toggl api token here
   const api_key = "api key";
-
   const AuthHeader = `Basic ${btoa(`${api_key}:api_token`)}`;
 
   const buildErrorObject = (r) => ({
@@ -102,72 +101,136 @@
         console.log(e);
       }
 
-      const task = selection.tasks[0];
-      let taskName = "";
-      let projectNameWhole = task.containingProject && task.containingProject.name;
-      let projectName = ""
-      if (projectNameWhole.includes(":")){
-        projectName = projectNameWhole.split(": ")[0]
-        taskName = projectNameWhole.split(": ")[1] + ": " + task.name
-      } else {
-        projectName = projectNameWhole
-        taskName = task.name
+      var isProject = false
+      if (selection.tasks.length == 0) {
+        isProject = true
       }
 
-      const toggleProject = projects.find(
-        (p) => p.name.trim().toLowerCase() === projectName.trim().toLowerCase()
-      );
-
-      let pid;
-      if (!projectName) {
-        pid = null;
-      } else if (!toggleProject) {
-        console.log(`creating project in toggl called ${projectName} because it was not found`);
-        try {
-          const r = await createTogglProject(projectName);
-          console.log(`project created id: ${r.id}`);
-          pid = r.id;
-        } catch (e) {
-          console.log(`Error creating project ${projectName}`);
-          console.log(e);
-        }
-      } else {
-        pid = toggleProject.id;
-      }
-      console.log('pid is: ', pid);
-
-      const taskTags = task.tags.map((t) => t.name);
-
-      const TogglTags = []
-      for (var i = 0; i < taskTags.length; i++) {
-            if (String(taskTags[i]).includes("Toggl")) {
-                TogglTags.push(taskTags[i].slice(5))
-            }
-        }
+      if (isProject == true) {
+        console.log("true")
+        let taskName = ""
+        let projectName = selection.projects[0].name
+        console.log(projectName)
+        let task = selection.projects[0]
+        const taskTags = task.tags.map((t) => t.name);
+        const TogglTags = []
+        for (var i = 0; i < taskTags.length; i++) {
+              if (String(taskTags[i]).includes("Toggl")) {
+                  TogglTags.push(taskTags[i].slice(5))
+              }
+          }
         console.log(TogglTags)
 
+        const togglProject = projects.find(
+          (p) => p.name.trim().toLowerCase() === projectName.trim().toLowerCase()
+        );
 
-      try {
-        const r = await startTimer({
-          description: taskName,
-          created_with: 'omnifocus',
-          tags: TogglTags,
-          pid,
-        });
-        console.log('Timer started successfully', JSON.stringify(r));
-      } catch (e) {
-        await log('An error occurred', 'See console for more info');
-        console.log(JSON.stringify(e, null, 2));
-      }
+        let pid;
+        if (!projectName) {
+          pid = null;
+        } else if (!togglProject) {
+          console.log(`creating project in toggl called ${projectName} because it was not found`);
+          try {
+            const r = await createTogglProject(projectName);
+            console.log(`project created with id: ${r.id}`);
+            pid = r.id;
+          } catch (e) {
+            console.log(`error creating project ${projectName}`);
+            console.log(e);
+          }
+        } else {
+          pid = togglProject.id;
+        }
+
+        try {
+          const r = await startTimer({
+            description: taskName,
+            created_with: 'OmniFocus-automation',
+            tags: TogglTags,
+            pid,
+          });
+          console.log('Timer started successfully', JSON.stringify(r));
+        } catch (e) {
+          await log('An error occurred', 'See the console for more info');
+          console.log(JSON.stringify(e, null, 2));
+        }
+      } else {
+        const task = selection.tasks[0]
+
+        let taskName = "";
+        let projectNameWhole = task.containingProject && task.containingProject.name;
+        let projectName = ""
+        if (projectNameWhole.includes(":")){
+          projectName = projectNameWhole.split(": ")[0]
+          taskName = projectNameWhole.split(": ")[1] + ": " + task.name
+        } else {
+          projectName = projectNameWhole
+          taskName = task.name
+        }
+
+
+
+        const togglProject = projects.find(
+          (p) => p.name.trim().toLowerCase() === projectName.trim().toLowerCase()
+        );
+
+
+
+        let pid;
+        if (!projectName) {
+          pid = null;
+        } else if (!togglProject) {
+          console.log(`creating project in toggl called ${projectName} because it was not found`);
+          try {
+            const r = await createTogglProject(projectName);
+            console.log(`project created with id: ${r.id}`);
+            pid = r.id;
+          } catch (e) {
+            console.log(`error creating project ${projectName}`);
+            console.log(e);
+          }
+        } else {
+          pid = togglProject.id;
+        }
+        console.log('pid is: ', pid);
+
+        const taskTags = task.tags.map((t) => t.name);
+
+        const TogglTags = []
+        for (var i = 0; i < taskTags.length; i++) {
+              if (String(taskTags[i]).includes("Toggl")) {
+                  TogglTags.push(taskTags[i].slice(5))
+              }
+          }
+          console.log(TogglTags)
+
+        try {
+          const r = await startTimer({
+            description: taskName,
+            created_with: 'OmniFocus-automation',
+            tags: TogglTags,
+            pid,
+          });
+          console.log('Timer started successfully', JSON.stringify(r));
+        } catch (e) {
+          await log('An error occurred', 'See the console for more info');
+          console.log(JSON.stringify(e, null, 2));
+        }
+
+      } //end brace
+
+
     } catch (e) {
       await log('An error occurred', 'See console for more info');
       console.log(JSON.stringify(e, null, 2));
     }
+
+
   });
 
-  action.validate = function (selection, sender) {
-    return selection.tasks.length === 1;
-  };
+  // action.validate = function (selection, sender) {
+  //   return selection.tasks.length === 1;
+  // };
 
   // Here I'm using https://github.com/MaxArt2501/base64-js/blob/master/base64.js
   function btoa(stringParam) {
@@ -202,4 +265,4 @@
   }
 
   return action;
-})();
+  })();

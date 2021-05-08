@@ -15,3 +15,6 @@ https://user-images.githubusercontent.com/62226606/117526904-ee139b80-af7c-11eb-
 If it doesn't already exist, it will be automatically created. If you have a project in OmniFocus that is part of a larger project and if you want your Toggl timer to use that, you can put the name of your Toggl project before the OmniFocus project name with a ":". For example, running the Start Toggl Timer automation on a task within an OmniFocus project called "Coding: OmniFocus Toggl Automation" will start a Toggl timer with the project "Coding." Then, any text after the ":" (in this case "OmniFocus Toggl Automation") will be put at the start of the Toggl timer's description, again followed by a colon.
 
 https://user-images.githubusercontent.com/62226606/117527010-8873df00-af7d-11eb-8939-fa20396968f7.mov
+
+### running automation on project
+You can now run the Start Toggl Timer automation on an OmniFocus project instead of a task. It will work the same as running the automation on a task, but your Toggl timer, won't have a description.
