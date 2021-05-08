@@ -39,11 +39,6 @@
     );
     const r = await fetchRequest.fetch();
 
-    // if (r.statusCode !== 200) {
-    //   console.log('here');
-    //   throw buildErrorObject(r);
-    // }
-
     return JSON.parse(r.bodyString).data;
   }
 
@@ -127,7 +122,7 @@
       if (!projectName) {
         pid = null;
       } else if (!toggleProject) {
-        console.log(`project not found creating new ${projectName} project`);
+        console.log(`creating project in toggl called ${projectName} because it was not found`);
         try {
           const r = await createTogglProject(projectName);
           console.log(`project created id: ${r.id}`);
@@ -146,14 +141,10 @@
       const TogglTags = []
       for (var i = 0; i < taskTags.length; i++) {
             if (String(taskTags[i]).includes("Toggl")) {
-//                taskTags[i]
                 TogglTags.push(taskTags[i].slice(5))
             }
         }
         console.log(TogglTags)
-//      const tagString = String(taskTags)
-//      const tagList = taskTags.split(",")
-//      console.log(TagList)
 
 
       try {
@@ -163,8 +154,6 @@
           tags: TogglTags,
           pid,
         });
-        // task.name = TRACKING_NAME_PREFIX + task.name;
-        // task.addTag(trackingTag);
         console.log('Timer started successfully', JSON.stringify(r));
       } catch (e) {
         await log('An error occurred', 'See console for more info');
