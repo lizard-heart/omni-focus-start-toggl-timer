@@ -12,6 +12,7 @@
 (() => {
   // add your toggl api token here
   const api_key = "api key";
+
   const AuthHeader = `Basic ${btoa(`${api_key}:api_token`)}`;
 
   const buildErrorObject = (r) => ({
@@ -34,7 +35,7 @@
       ['Content-Type']: 'application/json',
     };
     fetchRequest.url = URL.fromString(
-      'https://www.toggl.com/api/v8/time_entries/start'
+      'https://api.track.toggl.com/api/v8/time_entries/start'
     );
     const r = await fetchRequest.fetch();
 
@@ -72,6 +73,8 @@
       `https://api.track.toggl.com/api/v8/me?with_related_data=true`
     );
     const r = await fetchRequest.fetch();
+    console.log(r)
+
 
     if (r.statusCode !== 200) {
       throw buildErrorObject(r);
@@ -108,9 +111,17 @@
 
       if (isProject == true) {
         console.log("true")
-        let taskName = ""
-        let projectName = selection.projects[0].name
-        console.log(projectName)
+        let taskName = "";
+        let projectName = "";
+        let projectNameWhole = selection.projects[0].name
+        if (projectNameWhole.includes(":")){
+          projectName = projectNameWhole.split(": ")[0]
+          taskName = projectNameWhole.split(": ")[1]
+        } else {
+          projectName = projectNameWhole
+          // taskName = task.name
+        }
+        console.log(projectNameWhole)
         let task = selection.projects[0]
         const taskTags = task.tags.map((t) => t.name);
         const TogglTags = []
@@ -265,4 +276,4 @@
   }
 
   return action;
-  })();
+})();
