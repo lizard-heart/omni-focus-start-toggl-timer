@@ -1,5 +1,5 @@
 # of-start-toggl-timer
-Start a toggl timer from within OmniFocus. Heavily inspired by https://github.com/benhughes/OmniToggl.
+Start a toggl timer from within OmniFocus.
 
 ## setup/installation
 To add this automation to OmniFocus download this repository as a zip file or clone it. Then right click on the file start-timer.omnifocusjs and open in OmniFocus.
