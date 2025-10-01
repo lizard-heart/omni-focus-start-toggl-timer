@@ -11,7 +11,7 @@
 
 (() => {
   // add your toggl api token here
-  const api_key = "api key";
+  const api_key = "56cfe52d83297ef1f4aac3b4c44e8867";
 
   const AuthHeader = `Basic ${btoa(`${api_key}:api_token`)}`;
 
@@ -22,11 +22,16 @@
 
 
   // this function makes a fetch request to the toggl api
-  async function startTimer(timeEntry) {
+  async function startTimer(timeEntry, workspaceId) {
     const fetchRequest = new URL.FetchRequest();
+    // Add ISO 8601 timestamp for start time (current time in UTC)
+    const now = new Date().toISOString();
     fetchRequest.bodyData = Data.fromString(
       JSON.stringify({
-        time_entry: timeEntry,
+        ...timeEntry,
+        start: now,
+        workspace_id: workspaceId,
+        duration: -1, // Negative duration indicates a running timer
       })
     );
     fetchRequest.method = 'POST';
@@ -35,23 +40,7 @@
       ['Content-Type']: 'application/json',
     };
     fetchRequest.url = URL.fromString(
-      'https://api.track.toggl.com/api/v8/time_entries/start'
-    );
-    const r = await fetchRequest.fetch();
-
-    return JSON.parse(r.bodyString).data;
-  }
-
-  async function createTogglProject(name) {
-    const fetchRequest = new URL.FetchRequest();
-    fetchRequest.bodyData = Data.fromString(JSON.stringify({project: {name}}));
-    fetchRequest.method = 'POST';
-    fetchRequest.headers = {
-      Authorization: AuthHeader,
-      ['Content-Type']: 'application/json',
-    };
-    fetchRequest.url = URL.fromString(
-      'https://api.track.toggl.com/api/v8/projects'
+      `https://api.track.toggl.com/api/v9/workspaces/${workspaceId}/time_entries`
     );
     const r = await fetchRequest.fetch();
 
@@ -59,10 +48,55 @@
       throw buildErrorObject(r);
     }
 
-    return JSON.parse(r.bodyString).data;
+    return JSON.parse(r.bodyString);
   }
 
-  async function getTogglProjects() {
+  async function createTogglProject(name, workspaceId) {
+    const fetchRequest = new URL.FetchRequest();
+    fetchRequest.bodyData = Data.fromString(JSON.stringify({
+      name,
+      active: true
+    }));
+    fetchRequest.method = 'POST';
+    fetchRequest.headers = {
+      Authorization: AuthHeader,
+      ['Content-Type']: 'application/json',
+    };
+    fetchRequest.url = URL.fromString(
+      `https://api.track.toggl.com/api/v9/workspaces/${workspaceId}/projects`
+    );
+    const r = await fetchRequest.fetch();
+
+    if (r.statusCode !== 200) {
+      throw buildErrorObject(r);
+    }
+
+    return JSON.parse(r.bodyString);
+  }
+
+  async function activateTogglProject(projectId, workspaceId) {
+    const fetchRequest = new URL.FetchRequest();
+    fetchRequest.bodyData = Data.fromString(JSON.stringify({
+      active: true
+    }));
+    fetchRequest.method = 'PUT';
+    fetchRequest.headers = {
+      Authorization: AuthHeader,
+      ['Content-Type']: 'application/json',
+    };
+    fetchRequest.url = URL.fromString(
+      `https://api.track.toggl.com/api/v9/workspaces/${workspaceId}/projects/${projectId}`
+    );
+    const r = await fetchRequest.fetch();
+
+    if (r.statusCode !== 200) {
+      throw buildErrorObject(r);
+    }
+
+    return JSON.parse(r.bodyString);
+  }
+
+  async function getCurrentTimeEntry() {
     const fetchRequest = new URL.FetchRequest();
     fetchRequest.method = 'GET';
     fetchRequest.headers = {
@@ -70,7 +104,46 @@
       ['Content-Type']: 'application/json',
     };
     fetchRequest.url = URL.fromString(
-      `https://api.track.toggl.com/api/v8/me?with_related_data=true`
+      `https://api.track.toggl.com/api/v9/me/time_entries/current`
+    );
+    const r = await fetchRequest.fetch();
+
+    if (r.statusCode === 200) {
+      const body = JSON.parse(r.bodyString);
+      return body || null;
+    }
+
+    return null;
+  }
+
+  async function stopTimeEntry(timeEntryId, workspaceId) {
+    const fetchRequest = new URL.FetchRequest();
+    fetchRequest.method = 'PATCH';
+    fetchRequest.headers = {
+      Authorization: AuthHeader,
+      ['Content-Type']: 'application/json',
+    };
+    fetchRequest.url = URL.fromString(
+      `https://api.track.toggl.com/api/v9/workspaces/${workspaceId}/time_entries/${timeEntryId}/stop`
+    );
+    const r = await fetchRequest.fetch();
+
+    if (r.statusCode !== 200) {
+      throw buildErrorObject(r);
+    }
+
+    return JSON.parse(r.bodyString);
+  }
+
+  async function getTogglData() {
+    const fetchRequest = new URL.FetchRequest();
+    fetchRequest.method = 'GET';
+    fetchRequest.headers = {
+      Authorization: AuthHeader,
+      ['Content-Type']: 'application/json',
+    };
+    fetchRequest.url = URL.fromString(
+      `https://api.track.toggl.com/api/v9/me?with_related_data=true`
     );
     const r = await fetchRequest.fetch();
     console.log(r)
@@ -80,7 +153,7 @@
       throw buildErrorObject(r);
     }
 
-    return JSON.parse(r.bodyString).data.projects;
+    return JSON.parse(r.bodyString);
   }
 
   async function log(message, title = 'Log') {
@@ -93,15 +166,24 @@
     try {
 
       let projects = [];
+      let workspaceId = null;
 
       try {
-        projects = await getTogglProjects();
+        const userData = await getTogglData();
+        projects = userData.projects || [];
+        workspaceId = userData.default_workspace_id;
+
+        if (!workspaceId) {
+          await log('No workspace found. Please check your Toggl account.', 'Error');
+          return;
+        }
       } catch (e) {
         await log(
           'An error occurred getting projects',
           'See console for more info'
         );
         console.log(e);
+        return;
       }
 
       var isProject = false
@@ -142,7 +224,7 @@
         } else if (!togglProject) {
           console.log(`creating project in toggl called ${projectName} because it was not found`);
           try {
-            const r = await createTogglProject(projectName);
+            const r = await createTogglProject(projectName, workspaceId);
             console.log(`project created with id: ${r.id}`);
             pid = r.id;
           } catch (e) {
@@ -151,6 +233,32 @@
           }
         } else {
           pid = togglProject.id;
+          // Check if project is archived and activate it if needed
+          if (!togglProject.active) {
+            console.log(`project ${projectName} is archived, activating it`);
+            try {
+              await activateTogglProject(pid, workspaceId);
+              console.log(`project ${projectName} activated successfully`);
+            } catch (e) {
+              console.log(`error activating project ${projectName}`);
+              console.log(e);
+            }
+          }
+        }
+
+        // Check if there's already a running timer for this task
+        try {
+          const currentEntry = await getCurrentTimeEntry();
+
+          if (currentEntry && currentEntry.description === taskName) {
+            // Stop the running timer
+            await stopTimeEntry(currentEntry.id, workspaceId);
+            console.log('Timer stopped for:', taskName);
+            await log(`Timer stopped for "${taskName}"`, 'Timer Stopped');
+            return;
+          }
+        } catch (e) {
+          console.log('Error checking current timer:', e);
         }
 
         try {
@@ -158,9 +266,10 @@
             description: taskName,
             created_with: 'OmniFocus-automation',
             tags: TogglTags,
-            pid,
-          });
+            project_id: pid,
+          }, workspaceId);
           console.log('Timer started successfully', JSON.stringify(r));
+          await log(`Timer started for "${taskName}"`, 'Timer Started');
         } catch (e) {
           await log('An error occurred', 'See the console for more info');
           console.log(JSON.stringify(e, null, 2));
@@ -171,7 +280,7 @@
         let taskName = "";
         let projectNameWhole = task.containingProject && task.containingProject.name;
         let projectName = ""
-        if (projectNameWhole.includes(":")){
+        if (projectNameWhole && projectNameWhole.includes(":")){
           projectName = projectNameWhole.split(": ")[0]
           taskName = projectNameWhole.split(": ")[1] + ": " + task.name
         } else {
@@ -193,7 +302,7 @@
         } else if (!togglProject) {
           console.log(`creating project in toggl called ${projectName} because it was not found`);
           try {
-            const r = await createTogglProject(projectName);
+            const r = await createTogglProject(projectName, workspaceId);
             console.log(`project created with id: ${r.id}`);
             pid = r.id;
           } catch (e) {
@@ -202,6 +311,17 @@
           }
         } else {
           pid = togglProject.id;
+          // Check if project is archived and activate it if needed
+          if (!togglProject.active) {
+            console.log(`project ${projectName} is archived, activating it`);
+            try {
+              await activateTogglProject(pid, workspaceId);
+              console.log(`project ${projectName} activated successfully`);
+            } catch (e) {
+              console.log(`error activating project ${projectName}`);
+              console.log(e);
+            }
+          }
         }
         console.log('pid is: ', pid);
 
@@ -215,14 +335,30 @@
           }
           console.log(TogglTags)
 
+        // Check if there's already a running timer for this task
+        try {
+          const currentEntry = await getCurrentTimeEntry();
+
+          if (currentEntry && currentEntry.description === taskName) {
+            // Stop the running timer
+            await stopTimeEntry(currentEntry.id, workspaceId);
+            console.log('Timer stopped for:', taskName);
+            await log(`Timer stopped for "${taskName}"`, 'Timer Stopped');
+            return;
+          }
+        } catch (e) {
+          console.log('Error checking current timer:', e);
+        }
+
         try {
           const r = await startTimer({
             description: taskName,
             created_with: 'OmniFocus-automation',
             tags: TogglTags,
-            pid,
-          });
+            project_id: pid,
+          }, workspaceId);
           console.log('Timer started successfully', JSON.stringify(r));
+          await log(`Timer started for "${taskName}"`, 'Timer Started');
         } catch (e) {
           await log('An error occurred', 'See the console for more info');
           console.log(JSON.stringify(e, null, 2));
